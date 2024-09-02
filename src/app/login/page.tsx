@@ -56,7 +56,7 @@ const Login = async () => {
       action={async () => {
         "use server"
         await signIn("google" , {
-        redirectTo:'/'
+          redirect:false
         })
       
       }}
