@@ -50,21 +50,20 @@ const SocialMediaPage = () => {
 
   return (
     <div className="h-screen w-full flex justify-center items-center p-4" style={{ backgroundColor: '#ffd39e', color: '#5f45f2' }}>
-      <div className="max-w-lg p-6 givemargins" style={{ backgroundColor: '#ffd39e', borderColor: '#5f45f2' , background:'red' }}>
-        <div className="child-margin">
-        <CardHeader className="mb-4">
+      <div className="max-w-lg p-6 givemargins" style={{ backgroundColor: '#ffd39e', borderColor: '#5f45f2'  }}>
+        <CardHeader className="mb-8">
           <CardTitle className="text-2xl font-bold text-center" style={{ color: '#5f45f2' }}>Complete Your Profile</CardTitle>
         </CardHeader>
         <CardContent>
           {step === 1 ? (
             <>
-              <p className="mb-4" style={{ color: '#5f45f2' }}>Select your preferred social media platforms:</p>
-              <div className="grid grid-cols-5 gap-4 my-4">
+              <p className="mb-10 text-sm font-bold leading-0 text-center" style={{ color: '#5f45f2' }}>Select your preferred social media platforms:</p>
+              <div className="grid grid-cols-5 gap-4 mb-10">
                 {socialMediaIcons.map(({ icon: Icon, name }) => (
                   <button 
                     key={name}
                     onClick={() => handleIconSelect(name)}
-                    className={`w-16 h-16 rounded-full flex items-center justify-center text-2xl
+                    className={`w-16 h-16 rounded-full flex items-center justify-center text-2xln m-2
                       ${selectedIcons.includes(name) 
                         ? 'bg-white text-black border-green-500' 
                         : 'bg-gray-800 text-white'}`}
@@ -96,7 +95,7 @@ const SocialMediaPage = () => {
             <Button 
               onClick={() => step === 1 ? setStep(2) : handleSubmit()}
               disabled={step === 1 && selectedIcons.length === 0}
-              className="w-full bg-white text-black hover:bg-gray-200" // Change here
+              className="w-full bg-white text-black hover:bg-gray-200 mt-5" // Change here
               style={{ backgroundColor: '#5f45f2', color: '#ffd39e' }} // Change here
             >
               {step === 1 ? 'Continue' : 'Finish'}
@@ -104,7 +103,6 @@ const SocialMediaPage = () => {
           </div>
         </CardContent>
         </div>
-      </div>
     </div>
   );
 };
