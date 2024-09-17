@@ -26,7 +26,7 @@ const SocialMediaPage = () => {
   const handleIconSelect = (icon: string) => {
     setSelectedIcons(prev => 
       prev.includes(icon) 
-        ? prev
+        ? prev.filter(selectedIcon => selectedIcon !== icon)
         : [...prev, icon]
     );
     setSocialLinks(prev => {
@@ -65,7 +65,7 @@ const SocialMediaPage = () => {
                     onClick={() => handleIconSelect(name)}
                     className={`w-16 h-16 rounded-full flex items-center justify-center text-2xln m-2
                       ${selectedIcons.includes(name) 
-                        ? 'bg-white text-black border-green-500' 
+                        ? 'bg-white text-black border-solid border-4 border-violet-800' 
                         : 'bg-gray-800 text-white'}`}
                   >
                     {  <Icon  /> }

@@ -1,0 +1,104 @@
+body {
+    margin: 0;
+    font-family: 'Roboto', sans-serif;
+}
+
+.navbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 50px 40px 0 40px;
+}
+
+.customInput::placeholder{
+    color : black
+}
+.navbar .logo {
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    gap: 20px;
+}
+
+.nav-links li {
+    display: inline;
+}
+
+.nav-links a {
+    text-decoration: none;
+    color: #ffffff; /* White text */
+    font-weight: 500;
+}
+
+.auth-buttons .login,
+.auth-buttons .signup {
+    background-color:#ffffff; /* White button background */
+    color: #000000; /* Black button text */
+    padding: 10px 20px;
+    border-left: 2px solid #000000;
+    cursor: pointer;
+    height: 100%;
+}
+
+.auth-buttons .signup {
+    background-color: #ffffff; /* Black button background */
+    color: #000000; /* White button text */
+
+}
+.auth-buttons{
+    height: 100%;
+}
+.main-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 100px;
+}
+
+.hero-text {
+    max-width: 600px;
+}
+
+.hero-text h1 {
+    font-size: 3em;
+    font-weight: bold;
+    color: #ffffff; /* White text color */
+}
+
+.hero-text p {
+    margin-top: 20px;
+    font-size: 1.2em;
+    color: #ffffff; /* White text */
+}
+
+.cta-buttons {
+    margin-top: 20px;
+}
+
+.cta-buttons input[type="text"] {
+    padding: 10px;
+    border: 1px solid #ffffff; /* White border */
+    width: 200px;
+    margin-right: 10px;
+    background-color: #000000; /* Black background */
+    color: #ffffff; /* White text */
+}
+
+.cta-buttons button {
+    background-color: #ffffff; /* White button color */
+    border: none;
+    padding: 10px 20px;
+    cursor: pointer;
+    color: #000000; /* Black text */
+    font-weight: bold;
+}
+
+.hero-image img {
+    width: 400px; /* Adjust size as needed */
+    border-radius: 15px;
+    border: 1px solid #ffffff; /* White border */
+}

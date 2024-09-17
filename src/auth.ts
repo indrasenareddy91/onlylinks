@@ -4,12 +4,13 @@ import Google from "next-auth/providers/google";
 import { User } from "@/models/User";
 import { compare } from "bcryptjs";
 import connectDB from "@/lib/db";
+import { redirect } from "next/navigation";
+
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Google,
     Credentials({
       name: "Credentials",
-
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Password", type: "password" },
@@ -18,6 +19,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorize: async (credentials) => {
         const email = credentials.email as string | undefined;
         const password = credentials.password as string | undefined;
+        
 
         if (!email || !password) {
           throw new CredentialsSignin("Please provide both email & password");
@@ -25,7 +27,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
         await connectDB();
 
-        const user = await User.findOne({ email }).select("+password +role");
+        const user = await User.findOne({ email }).select("+password");
 
         if (!user) {
           throw new Error("Invalid email or password");
@@ -40,15 +42,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!isMatched) {
           throw new Error("Password did not matched");
         }
-
+   
         const userData = {
-          firstName: user.firstName,
-          lastName: user.lastName,
+          name: user.name,
           email: user.email,
-          role: user.role,
-          id: user._id,
+          id: user._id.toString(),
+          image: user?.image || undefined,
         };
-
         return userData;
       },
     }),
@@ -59,24 +59,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
 
   callbacks: {
-    async session({ session, token }) {
-      console.log(session, token)
+   
+    async session({ session,token }) {
+  
       if (token?.sub) {
         session.user.id = token.sub;
+        session.user.name = token.name
+       
       }
       return session;
     },
 
     async jwt({ token, user }) {
-      console.log(token, user)
+      
      if(user){
       token.id = user.id
+      token.email = user.email
+      token.name = user.name
      }
       return token;
     },
 
     signIn: async ({ user, account }) => {
-      console.log('hello')
       if (account?.provider === "google") {
         try {
           const { email, name, image, id } = user;
@@ -86,8 +90,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           if (!alreadyUser) {
             await User.create({ email, name, image, authProviderId: id });
           } else {
-            return true;
+            // Update the existing user's information
+            await User.findOneAndUpdate(
+              { email },
+              { $set: { name, image, authProviderId: id } },
+              { new: true }
+            );
           }
+          return true;
         } catch (error) {
           throw new Error("Error while creating user");
         }
@@ -101,3 +111,4 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
   },
 });
+

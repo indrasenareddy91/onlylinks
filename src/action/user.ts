@@ -6,6 +6,8 @@ import { hash } from "bcryptjs";
 import { CredentialsSignin } from "next-auth";
 import { signIn } from "@/auth";
 import { User } from "@/models/User";
+import { auth } from "@/auth";
+
 import { Resend } from 'resend';
 import otpGenerator from 'otp-generator';
 import { createClient } from 'redis';
@@ -22,6 +24,7 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 const login = async (formData: FormData) => {
   const email = formData.get("email") as string;
   const password = formData.get("password") as string;
+  const name = formData.get("name") as string;
 
   try {
     await signIn("credentials", {
@@ -29,6 +32,7 @@ const login = async (formData: FormData) => {
       callbackUrl: "/",
       email,
       password,
+      name
     });
   } catch (error) {
     const someError = error as CredentialsSignin;
@@ -39,6 +43,7 @@ const login = async (formData: FormData) => {
 
 const registerUser = async (formData: FormData) => {
   // Extract user data from formData
+  console.log(formData)
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const name = formData.get('name') as string;
@@ -82,16 +87,22 @@ const registerUser = async (formData: FormData) => {
 };
 
 const verifyOTP = async (formData: FormData) => {
+  console.log(' isndied the verify otp server fucntion')
   const inputOTP = formData.get('otp') as string;
   const expirationTime = parseInt(formData.get('expirationTime') as string);
   const userData = JSON.parse(formData.get('userData') as string);
-  const { email, password, name:firstname } = userData;
+  console.log(userData)
+  const { email, password, name } = userData;
 console.log(inputOTP)
   if (Date.now() > expirationTime) {
     return { error: "OTP has expired" };
   }
   // Verify the OTP stored in Redis
-  await client.connect();
+  
+  if(!client.isOpen){
+    await client.connect()
+
+  }
   const storedOTP = await client.get(`otp:${email}`);
 console.log(storedOTP)
   if ( inputOTP !== storedOTP) {
@@ -104,9 +115,15 @@ console.log(storedOTP)
 
   try {
     const hashedPassword = await hash(password, 10);
-    const user = new User({ email, password: hashedPassword, firstname });
+    const user = new User({ email, password: hashedPassword, name });
    console.log(await user.save()) 
-    return { success: "User registered successfully", };
+   const session = await signIn("credentials", {
+    redirect: false,
+    email,
+    password,
+    
+  });
+    return { success: "User registered succssfully", };
   } catch (error) {
     console.log(error)
     return { error: "Failed to register user" };
@@ -114,10 +131,215 @@ console.log(storedOTP)
 };
 
 const googleSignIn = async (formData: FormData) => {
-  await signIn("google", {
-    redirect: true,
-    callbackUrl: "/",
+    const signInss  =  await signIn("google", {
+      redirect:true,
+      redirectTo: "/onboarding",
   });
+  console.log(signInss)
 };
 
-export { registerUser, login, googleSignIn, verifyOTP };
+//code a resendotp function
+const resendOTPP = async (formData: FormData) => {
+  const email = formData.get('email') as string;
+  
+  if (!email) {
+    return { error: "Email is required" };
+  }
+
+  try {
+    if (!client.isOpen) {
+      await client.connect();
+    }
+
+    // Generate a new OTP
+    const otp = otpGenerator.generate(6, { digits: true, specialChars: false , upperCaseAlphabets: false, lowerCaseAlphabets: false});
+
+    // Store OTP in temporary storage (Redis) with a short expiration
+    await client.set(`otp:${email}`, otp, {
+        EX: 60 // 30 seconds expiration
+    });
+    await client.disconnect();
+
+    // Send email with OTP
+    await resend.emails.send({
+      from: 'onboarding@resend.dev',
+      to: email,
+      subject: 'Verify your email',
+      html: `<p>Your OTP is: ${otp}</p><p>This OTP will expire in 60 seconds.</p>`
+    });
+
+    return { success: "New OTP sent successfully"  , status : true};
+  } catch (error) {
+    console.error("Error resending OTP:", error);
+    return { error: "Failed to resend OTP" };
+  }
+};
+// ... existing code ...
+const checkUsername = async (username: string): Promise<boolean> => {
+  // Implement the logic to check if the username is available
+  console.log('hi')
+  const user = await User.findOne({ username });
+  console.log(user)
+  if (user) {
+    return false
+  }
+  return true
+  // Return true if available, false if not
+};
+
+const updateUsername = async (username: string)=> {
+  // Implement the logic to update the user's username in your database
+  const session = await auth();
+  if (!session || !session.user) {
+    throw new Error("User not authenticated");
+  }
+
+  const userEmail = session.user.email;
+  if (!userEmail) {
+    throw new Error("User email not found in session");
+  }
+
+  const updatedUser = await User.findOneAndUpdate(
+    { email: userEmail },
+    { username: username , 
+      isUsernameSet: true
+
+    },
+    { new: true }
+  );
+console.log(updatedUser)
+  if (!updatedUser) {
+    throw new Error("User not found or username update failed");
+  }
+
+  return true;
+  
+}
+interface SocialLink {
+  platform: string;
+  link: string;
+}
+const updateUserProfile = async (socialLinks : SocialLink[]) => {
+  console.log(socialLinks)
+  const session = await auth();
+  if (!session || !session.user) {
+    throw new Error("User not authenticated");
+  }
+
+  const userEmail = session.user.email;
+  if (!userEmail) {
+    throw new Error("User email not found in session");
+  }
+  const updatedUser = await User.findOneAndUpdate(
+    { email: userEmail },
+    { socialLinks: socialLinks },
+    { new: true }
+  );
+
+  if (!updatedUser) {
+    throw new Error("User not found or profile update failed");
+  }
+}
+
+const updateUserProfileDetails = async (profilePic: string | null, profileDisplayName: string, profileBio: string) => {
+  const session = await auth();
+  if (!session || !session.user) {
+    console.log('user not authenticated')
+    throw new Error("User not authenticated");
+  }
+
+  const userEmail = session.user.email;
+  if (!userEmail) { 
+    console.log('user email not found in session')
+    throw new Error("User email not found in session");
+  }
+  console.log(profilePic, profileDisplayName, profileBio)
+  console.log('hello')
+  const updatedUser = await User.findOneAndUpdate(
+    { email: userEmail },
+    { profilePic, profileDisplayName, profileBio },
+    { new: true }
+  );
+  console.log(updatedUser)
+}
+const deleteLink = async (id: string) => {
+  const session = await auth();
+  if (!session || !session.user) {
+    throw new Error("User not authenticated");
+  }
+
+  const userEmail = session.user.email;
+  if (!userEmail) {
+    throw new Error("User email not found in session");
+  }
+
+  const updatedUser = await User.findOneAndUpdate(
+    { email: userEmail },
+    { $pull: { socialLinks: { _id: id } } },
+    { new: true }
+  );
+}
+
+interface Link {
+  _id: string;
+  link: string;
+  platform: string;
+}
+const addLink = async (newLink: Link) => {
+  const session = await auth();
+  if (!session || !session.user) {
+    throw new Error("User not authenticated");
+  }
+  const userEmail = session.user.email;
+  if (!userEmail) {
+    throw new Error("User email not found in session");
+  }
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { email: userEmail },
+      { $push: { socialLinks: { platform: newLink.platform, link: newLink.link, _id: newLink._id } } },
+      { new: true }
+    );
+    console.log(updatedUser);
+    return true;
+  } catch (error) {
+    console.error('Error adding link:', error);
+    return false;
+  }
+} 
+
+const updateProfile = async (profile: any) => {
+  const session = await auth();
+  if (!session || !session.user) {
+    throw new Error("User not authenticated");
+  }
+
+  const userEmail = session.user.email;
+  if (!userEmail) { 
+    throw new Error("User email not found in session");
+  }
+
+  try {
+    const updatedUser = await User.findOneAndUpdate(
+      { email: userEmail },
+      { $set: profile },
+      { new: true } 
+    );
+
+    if (!updatedUser) {
+      throw new Error("User not found or profile update failed");
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error updating profile:", error);
+    return false;
+  
+  }
+}
+const getUserByUsername = async (username: string) => {
+   console.log(username)
+  const user = await User.findOne({ username });
+  return user;
+}
+export { registerUser, login, googleSignIn, verifyOTP , checkUsername, updateUsername  , resendOTPP , updateUserProfile , updateUserProfileDetails , deleteLink , addLink , updateProfile , getUserByUsername};
