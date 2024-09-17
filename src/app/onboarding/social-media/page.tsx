@@ -51,6 +51,7 @@ const SocialMediaPage = () => {
   return (
     <div className="h-screen w-full flex justify-center items-center p-4" style={{ backgroundColor: '#ffd39e', color: '#5f45f2' }}>
       <div className="max-w-lg p-6 givemargins" style={{ backgroundColor: '#ffd39e', borderColor: '#5f45f2' , background:'red' }}>
+        <div className="child-margin">
         <CardHeader className="mb-4">
           <CardTitle className="text-2xl font-bold text-center" style={{ color: '#5f45f2' }}>Complete Your Profile</CardTitle>
         </CardHeader>
@@ -102,6 +103,7 @@ const SocialMediaPage = () => {
             </Button>
           </div>
         </CardContent>
+        </div>
       </div>
     </div>
   );
