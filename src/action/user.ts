@@ -170,6 +170,7 @@ const resendOTPP = async (formData: FormData) => {
 // ... existing code ...
 const checkUsername = async (username: string): Promise<boolean> => {
   // Implement the logic to check if the username is available
+  await connectDB()
   const user = await User.findOne({ username });
   if (user) {
     return false
