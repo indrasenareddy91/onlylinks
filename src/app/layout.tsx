@@ -7,7 +7,7 @@ const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
   title: 'Onlylinks',
-  description: 'Share your content not your body',
+  description: 'Share your content not only your body',
 }
 
 export default function RootLayout({
