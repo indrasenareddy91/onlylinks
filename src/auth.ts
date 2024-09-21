@@ -1,4 +1,4 @@
-import NextAuth, { CredentialsSignin } from "next-auth";
+import NextAuth, { CredentialsSignin, SocialLink } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import Google from "next-auth/providers/google";
 import { User } from "@/models/User";
@@ -6,6 +6,18 @@ import { compare } from "bcryptjs";
 import connectDB from "@/lib/db";
 import { redirect } from "next/navigation";
 
+type Userdata = {
+  name: string,
+  id: string,
+  email: string,
+  image: string | undefined,
+  username?: string,
+  profileDisplayName?: string,
+  profileBio?: string,
+  profilePic?: string,
+  links?: SocialLink[],
+  isUsernameSet?: string,
+}
 export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Google,
@@ -19,7 +31,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       authorize: async (credentials) => {
         const email = credentials.email as string | undefined;
         const password = credentials.password as string | undefined;
-        
+
 
         if (!email || !password) {
           throw new CredentialsSignin("Please provide both email & password");
@@ -42,14 +54,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         if (!isMatched) {
           throw new Error("Password did not matched");
         }
-   
-        const userData = {
-          name: user.name,
-          email: user.email,
-          id: user._id.toString(),
-          image: user?.image || undefined,
-        };
-        return userData;
+
+        
+        return user;
       },
     }),
   ],
@@ -60,23 +67,50 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 
   callbacks: {
    
-    async session({ session,token }) {
-  
+    async session({ session , trigger, token }) {
       if (token?.sub) {
         session.user.id = token.sub;
         session.user.name = token.name
-       
+        if(token.username){
+          session.user.username = token.username as string
+          session.user.isUsernameSet = true
+        }
+        if(token.profileDisplayName && token.profilePic && token.profileBio){
+          session.user.profileDisplayName = token.profileDisplayName as string
+
+          session.user.profilePic = token.profilePic as string
+          session.user.profileBio = token.profileBio  as string
+        } 
+        if(token.socialLinks){  
+               session.user.socialLinks = token.socialLinks as SocialLink[]
+        }
       }
       return session;
     },
 
-    async jwt({ token, user }) {
-      
-     if(user){
-      token.id = user.id
-      token.email = user.email
-      token.name = user.name
-     }
+    async jwt({ token, trigger , user , session }) {
+       
+      if (trigger === 'update' && session) {
+         if(session.user.username && session.user.isUsernameSet === true) {
+           token.username = session.user.username
+         }
+         if(session.user.profileDisplayName && session.user.profilePic && session.user.profileBio){
+    token.profileDisplayName = session.user.profileDisplayName   
+    token.profilePic = session.user.profilePic
+    token.profileBio = session.user.profileBio
+         }
+         if(session.user.socialLinks){
+          token.socialLinks = session.user.socialLinks
+         }
+      }
+
+      if (user) {
+        token.id = user.id
+        token.email = user.email
+        token.name = user.name
+       
+
+      }
       return token;
     },
 

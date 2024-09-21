@@ -12,13 +12,14 @@ import { updateUserProfileDetails } from "@/action/user";
 
 const ProfilePage = () => {
   const router = useRouter();
-  const { data: session } = useSession();
-  const [profilePic, setProfilePic] = useState<string | null>(null);
+  const { data: session , update } = useSession();
+  const [profilePic, setProfilePic] = useState<string>('');
   const [displayName, setDisplayName] = useState("");
   const [bio, setBio] = useState("");
 
   useEffect(() => {
     if (session?.user?.image) {
+      console.log('hello')
       setProfilePic(session.user.image);
     }
   }, [session]);
@@ -35,10 +36,18 @@ const ProfilePage = () => {
   };
 
   const handleSubmit = async () => {
-    await updateUserProfileDetails(profilePic, displayName, bio);
-    router.push('/dashboard');
-  };
-
+    
+    try {
+      const result  =   await updateUserProfileDetails(profilePic, displayName, bio); 
+      if(result){
+        update({ user: { ...session?.user, profilePic, profileDisplayName: displayName, profileBio: bio} });
+          router.push('/dashboard')
+      }
+    }
+    catch(e){
+      alert(e)
+    }
+  }
   return (
     <div className="h-screen w-full flex justify-center items-center bg-[#ffd39e] text-[#5f45f2] p-4">
       <Card className="w-full max-w-lg bg-white text-black border-[#5f45f2]">
@@ -54,7 +63,7 @@ const ProfilePage = () => {
               {profilePic ? (
                 <AvatarImage src={profilePic} alt={`'s profile picture`} />
               ) : (
-                <AvatarFallback>{`hi`}</AvatarFallback>
+                <AvatarFallback>{`hello`}</AvatarFallback>
               )}
             </Avatar>
             <Input

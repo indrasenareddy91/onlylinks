@@ -13,12 +13,13 @@ import otpGenerator from 'otp-generator';
 import { createClient } from 'redis';
 
 const client = createClient({
-    password: 'kSseGxKbmleSVp47z0h5uY5lo5h03Ig7',
+    password: `${process.env.REDIS_PASSWORD}`,
     socket: {
-        host: 'redis-18688.c16.us-east-1-2.ec2.redns.redis-cloud.com',
+        host:  `${process.env.REDIS_URL}`,
         port: 18688
     }
 });
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 const login = async (formData: FormData) => {
@@ -43,7 +44,7 @@ const login = async (formData: FormData) => {
 
 const registerUser = async (formData: FormData) => {
   // Extract user data from formData
-  console.log(formData)
+  
   const email = formData.get('email') as string;
   const password = formData.get('password') as string;
   const name = formData.get('name') as string;
@@ -51,7 +52,6 @@ const registerUser = async (formData: FormData) => {
   try {
     await connectDB();
     const existingUser = await User.findOne({ email });
-    console.log(existingUser)
     if (existingUser) {
       return { error: "User already exists" };
     }
@@ -59,20 +59,19 @@ const registerUser = async (formData: FormData) => {
     const otp = otpGenerator.generate(6, { digits: true, specialChars: false , upperCaseAlphabets: false, lowerCaseAlphabets: false});
 
     // Store OTP in temporary storage (Redis) with a short expiration
-    await client.connect();
+   await client.connect();
     await client.set(`otp:${email}`, otp, {
         EX: 60 // 30 seconds expiration
     });
     await client.disconnect();
 
     // Send email with OTP
-    await resend.emails.send({
+   const response = await resend.emails.send({
       from: 'onboarding@resend.dev',
       to: email,
       subject: 'Verify your email',
       html: `<p>Your OTP is: ${otp}</p><p>This OTP will expire in 60 seconds.</p>`
     });
-
     const expirationTime = Date.now() + 30000; // 30 seconds from now
 
     return { 
@@ -87,13 +86,10 @@ const registerUser = async (formData: FormData) => {
 };
 
 const verifyOTP = async (formData: FormData) => {
-  console.log(' isndied the verify otp server fucntion')
   const inputOTP = formData.get('otp') as string;
   const expirationTime = parseInt(formData.get('expirationTime') as string);
   const userData = JSON.parse(formData.get('userData') as string);
-  console.log(userData)
   const { email, password, name } = userData;
-console.log(inputOTP)
   if (Date.now() > expirationTime) {
     return { error: "OTP has expired" };
   }
@@ -104,7 +100,6 @@ console.log(inputOTP)
 
   }
   const storedOTP = await client.get(`otp:${email}`);
-console.log(storedOTP)
   if ( inputOTP !== storedOTP) {
     return { error: "Invalid OTP" };
   }
@@ -116,8 +111,8 @@ console.log(storedOTP)
   try {
     const hashedPassword = await hash(password, 10);
     const user = new User({ email, password: hashedPassword, name });
-   console.log(await user.save()) 
-   const session = await signIn("credentials", {
+
+    const session = await signIn("credentials", {
     redirect: false,
     email,
     password,
@@ -125,7 +120,6 @@ console.log(storedOTP)
   });
     return { success: "User registered succssfully", };
   } catch (error) {
-    console.log(error)
     return { error: "Failed to register user" };
   }
 };
@@ -135,7 +129,6 @@ const googleSignIn = async (formData: FormData) => {
       redirect:true,
       redirectTo: "/onboarding",
   });
-  console.log(signInss)
 };
 
 //code a resendotp function
@@ -177,9 +170,7 @@ const resendOTPP = async (formData: FormData) => {
 // ... existing code ...
 const checkUsername = async (username: string): Promise<boolean> => {
   // Implement the logic to check if the username is available
-  console.log('hi')
   const user = await User.findOne({ username });
-  console.log(user)
   if (user) {
     return false
   }
@@ -207,11 +198,10 @@ const updateUsername = async (username: string)=> {
     },
     { new: true }
   );
-console.log(updatedUser)
+
   if (!updatedUser) {
     throw new Error("User not found or username update failed");
   }
-
   return true;
   
 }
@@ -220,7 +210,6 @@ interface SocialLink {
   link: string;
 }
 const updateUserProfile = async (socialLinks : SocialLink[]) => {
-  console.log(socialLinks)
   const session = await auth();
   if (!session || !session.user) {
     throw new Error("User not authenticated");
@@ -237,11 +226,13 @@ const updateUserProfile = async (socialLinks : SocialLink[]) => {
   );
 
   if (!updatedUser) {
+    return false
     throw new Error("User not found or profile update failed");
   }
+  return true
 }
 
-const updateUserProfileDetails = async (profilePic: string | null, profileDisplayName: string, profileBio: string) => {
+const updateUserProfileDetails = async (profilePic: string | undefined, profileDisplayName: string, profileBio: string) => {
   const session = await auth();
   if (!session || !session.user) {
     console.log('user not authenticated')
@@ -253,15 +244,21 @@ const updateUserProfileDetails = async (profilePic: string | null, profileDispla
     console.log('user email not found in session')
     throw new Error("User email not found in session");
   }
-  console.log(profilePic, profileDisplayName, profileBio)
-  console.log('hello')
   const updatedUser = await User.findOneAndUpdate(
     { email: userEmail },
     { profilePic, profileDisplayName, profileBio },
     { new: true }
   );
-  console.log(updatedUser)
+
+  if (!updatedUser) {
+    return false
+    throw new Error("User not found or profile update failed");
+  }
+
+  
+  return true
 }
+
 const deleteLink = async (id: string) => {
   const session = await auth();
   if (!session || !session.user) {
@@ -300,7 +297,6 @@ const addLink = async (newLink: Link) => {
       { $push: { socialLinks: { platform: newLink.platform, link: newLink.link, _id: newLink._id } } },
       { new: true }
     );
-    console.log(updatedUser);
     return true;
   } catch (error) {
     console.error('Error adding link:', error);
@@ -325,12 +321,12 @@ const updateProfile = async (profile: any) => {
       { $set: profile },
       { new: true } 
     );
-
     if (!updatedUser) {
+      return false
       throw new Error("User not found or profile update failed");
     }
-
-    return true;
+     const updatedUserData =  JSON.parse(JSON.stringify(updatedUser))
+    return updatedUserData;
   } catch (error) {
     console.error("Error updating profile:", error);
     return false;
@@ -338,7 +334,7 @@ const updateProfile = async (profile: any) => {
   }
 }
 const getUserByUsername = async (username: string) => {
-   console.log(username)
+
   const user = await User.findOne({ username });
   return user;
 }

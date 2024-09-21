@@ -3,10 +3,36 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { updateUsername, checkUsername } from "@/action/user";
 import Image from "next/image";
+import { useSession } from "next-auth/react";
 import { BadgeCheck, X, Loader2 } from 'lucide-react';
 import './onbaording.css'
+import { Session } from 'next-auth/react';
+
+declare module 'next-auth/react' {
+  type SocialLink = {
+    platform: string
+    link: string
+  }
+  interface Session {
+    user: {
+      id: string
+      name: string | null | undefined,
+      email: string
+      username?: string
+      image?: string
+      isUsernameSet?: boolean
+      profilePic?: string
+      profileDisplayName?: string
+      profileBio?: string
+      socialLinks?: SocialLink[]
+    }
+  }
+}
+
 const UsernamePage = () => {
+  const { data , update} = useSession();
   const router = useRouter();
+  
   const [loading, setLoading] = useState(false);
   const [username, setUsername] = useState("");
   const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
@@ -56,8 +82,13 @@ try {
     if (!isAvailable) return;
     setLoading(true);
     try {
-      await updateUsername(username);
-      router.push('/onboarding/social-media');
+     const result = await updateUsername(username);
+      if(result){
+        console.log('inside thiw shit')
+        update({ user: { ...data?.user, username: username  , isUsernameSet: true} });
+        router.push('/onboarding/social-media');
+
+      }
     } catch (error) {
       console.error("Error updating username:", error);
     } finally {

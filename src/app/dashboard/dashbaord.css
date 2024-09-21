@@ -1,6 +1,4 @@
-.shit{
-    -webkit-box-shadow: 10px 10px 132px 36px rgba(95,69,242,1);
--moz-box-shadow: 10px 10px 132px 36px rgba(95,69,242,1);
-box-shadow: 10px 10px 132px 36px rgba(95,69,242,1);
-
+body , * {
+    margin: 0;
+    padding: 0
 }

@@ -38,7 +38,9 @@ const Home = async () => {
   if (session) {  
     redirect('/dashboard')
   }
-
+const handleClick = () => {
+  console.log('clicked')
+}
   return (
     <body style={{ backgroundColor: colors.background, color: colors.text }}>
       <header className="navbar">
@@ -103,7 +105,7 @@ const Home = async () => {
               background: colors.text,
               color: "white"
             }}>
-              Claim your Onlylink
+              <Link href="/register">Claim your OnlyLink</Link>
             </button>
           </div>
         </div>

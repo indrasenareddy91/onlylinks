@@ -7,18 +7,21 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { updateUserProfile } from "@/action/user";
 import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin, FaYoutube, FaTiktok, FaPinterest, FaSnapchat, FaReddit, FaTumblr } from 'react-icons/fa';
 import './social-media.css'
+import { useSession } from "next-auth/react";
 const socialMediaIcons = [
   { icon: FaFacebook, name: "Facebook" }, { icon: FaTwitter, name: "Twitter" }, { icon: FaInstagram, name: "Instagram" }, { icon: FaLinkedin, name: "LinkedIn" }, { icon: FaYoutube, name: "YouTube" },
   { icon: FaTiktok, name: "TikTok" }, { icon: FaPinterest, name: "Pinterest" }, { icon: FaSnapchat, name: "Snapchat" }, { icon: FaReddit, name: "Reddit" }, { icon: FaTumblr, name: "Tumblr" }
 ];
 
 interface SocialLink {
+  _id: string;
   platform: string;
   link: string;
 }
 
 const SocialMediaPage = () => {
   const router = useRouter();
+  const { data  , update} = useSession()
   const [step, setStep] = useState(1);
   const [selectedIcons, setSelectedIcons] = useState<string[]>([]);
   const [socialLinks, setSocialLinks] = useState<SocialLink[]>([]);
@@ -33,7 +36,7 @@ const SocialMediaPage = () => {
       if (prev.some(link => link.platform === icon)) {
         return prev;
       }
-      return [...prev, { platform: icon, link: '' }];
+      return [...prev, { platform: icon, link: '' , _id : Date.now().toString()}];
     });
   };
 
@@ -44,8 +47,15 @@ const SocialMediaPage = () => {
   };
 
   const handleSubmit = async () => {
-    await updateUserProfile(socialLinks);
-    router.push('/onboarding/profile');
+       const result =   await updateUserProfile(socialLinks);
+       if(result){
+        console.log(socialLinks)
+        update({ user: { ...data?.user, socialLinks} });
+        router.push('/onboarding/profile')
+       }
+       else{
+        alert('Something went wrong refresh the page and try again')
+       }
   };
 
   return (

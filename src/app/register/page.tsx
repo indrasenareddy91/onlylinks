@@ -17,9 +17,6 @@ const RegisterForm = () => {
   const {status} = useSession();
   const router = useRouter();
   
-  if(status == 'authenticated'){
-    router.push('/');
-  }
   type userData = {
     status: boolean;
     success: string;  
@@ -40,7 +37,6 @@ const RegisterForm = () => {
   const [showResendButton, setShowResendButton] = useState(false);
    const [formData, setFormData] = useState<FormData | null>(null);
   const { register: registerField, handleSubmit, formState: { errors }, trigger } = useForm();
-  console.log(formData)
   useEffect(() => {
    if(inputElements.current.length > 0){
     inputElements.current[0].focus();
@@ -66,6 +62,7 @@ const RegisterForm = () => {
   }, [showOTP , showResendButton]);
 
   const onSubmit = async (data: any) => {
+    console.log('hello')
     setLoading(true);
     const formData = new FormData();
     Object.keys(data).forEach(key => formData.append(key, data[key]));

@@ -1,50 +1,59 @@
-"use client"
-import React from 'react'
-import Link from 'next/link'
-import { useSession, signOut } from 'next-auth/react'
-import { Button } from "@/components/ui/button"
-import { Home, User, Settings, LogOut, LogIn } from 'lucide-react'
+"use client";
+
+import React from "react";
+import Link from "next/link";
+import { useSession, signOut } from "next-auth/react";
+import { Button } from "@/components/ui/button";
+import { Home, User, Settings, LogOut, LogIn } from "lucide-react";
 
 const Navbar = () => {
-  const { data: session } = useSession()
+  const { data: session } = useSession();
 
   return (
-    <nav className="flex flex-col h-screen w- bg-[#fff] p-5 space-y-6 rounded-r-2xl shadow-lg  m-5 mt-12 ">
-      <div className="flex flex-col space-y-4">
-        <Link href="/dashboard" className="flex items-center space-x-3 text-[#000] hover:text-[#4a3bc1] transition-colors duration-200">
-          <Home size={20} />
-          <span className="text-lg font-semibold">Dashboard</span>
-        </Link>
-        <Link href="/profile" className="flex items-center space-x-3 text-[#000] hover:text-[#4a3bc1] transition-colors duration-200">
-          <User size={20} />
-          <span className="text-lg font-semibold">Profile</span>
-        </Link>
-        <Link href="/settings" className="flex items-center space-x-3 text-[#000] hover:text-[#4a3bc1] transition-colors duration-200">
-          <Settings size={20} />
-          <span className="text-lg font-semibold">Settings</span>
-        </Link>
-      </div>
-      <div className="mt-auto">
-        {session ? (
-          <Button
-            onClick={() => signOut()}
-            variant="outline"
-            className="w-full bg-[#5f45f2] text-[#ffd39e] hover:bg-[#4a3bc1] hover:text-[#ffd39e]"
-          >
-            <LogOut className='text-white mr-2' size={20} />
-            <span className='text-white'>Sign Out</span>
-          </Button>
-        ) : (
-          <Button asChild variant="default" className="w-full">
-            <Link href="/login" className="flex items-center justify-center space-x-2">
-              <LogIn size={20} />
-              <span>Sign In</span>
-            </Link>
-          </Button>
-        )}
-      </div>
-    </nav>
-  )
-}
+    <div className="flex flex-col justify-between bg-white rounded-2xl w-full h-full p-4">
+      {/* Links Section */}
+      <ul className="space-y-4">
+        <li>
+          <Link href="/dashboard" className="flex items-center space-x-2 text-gray-700 hover:text-black">
+            <Home className="w-5 h-5" />
+            <span>Dashboard</span>
+          </Link>
+        </li>
+        <li>
+          <Link href="/profile" className="flex items-center space-x-2 text-gray-700 hover:text-black">
+            <User className="w-5 h-5" />
+            <span>Profile</span>
+          </Link>
+        </li>
+        <li>
+          <Link href="/settings" className="flex items-center space-x-2 text-gray-700 hover:text-black">
+            <Settings className="w-5 h-5" />
+            <span>Settings</span>
+          </Link>
+        </li>
+      </ul>
 
-export default Navbar
+      {/* Sign In/Out Section */}
+      <div className="mt-auto">
+         
+          <Button
+            onClick={() => {
+              signOut({
+                redirect: true,
+                callbackUrl: "/login",
+              })
+              
+            }}
+            variant="outline"
+            className="w-full bg-[#5f45f2] text-[#ffd39e] hover:bg-[#4a3bc1] hover:text-[#ffd39e] flex items-center justify-center"
+          >
+            <LogOut className="w-5 h-5 mr-2" />
+            Sign Out
+          </Button>
+        
+      </div>
+    </div>
+  );
+};
+
+export default Navbar;

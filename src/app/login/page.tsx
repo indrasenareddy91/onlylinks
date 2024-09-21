@@ -13,12 +13,7 @@ import { login } from "@/action/user";
 import { Mail, Lock } from "lucide-react";
 
 const Login = async () => {
-  const session = await auth();
-
-  if(session){
-
-    redirect('/')
-  }
+ 
   return (
     <div className="h-screen w-full flex justify-center items-center bg-[#ffd39e] text-[#5f45f2]">
       <Card className="w-full max-w-sm bg-white border-[#5f45f2]">
