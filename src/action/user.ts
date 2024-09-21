@@ -20,7 +20,7 @@ const client = createClient({
     }
 });
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = new Resend(`${process.env.RESEND_API_KEY}`);
 
 const login = async (formData: FormData) => {
   const email = formData.get("email") as string;
