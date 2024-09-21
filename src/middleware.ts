@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import connectDB from './lib/db';
 import { auth } from "@/auth";
 type SocialLink = {
   platform: string
@@ -22,6 +23,7 @@ interface Session {
 }
 export async function middleware(req: NextRequest) {
   const session = await auth();
+  await connectDB();
 
   if (session) {
     if(req.nextUrl.pathname === '/register' || req.nextUrl.pathname === '/login') {
