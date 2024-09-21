@@ -23,7 +23,6 @@ interface Session {
 }
 export async function middleware(req: NextRequest) {
   const session = await auth();
-  await connectDB();
 
   if (session) {
     if(req.nextUrl.pathname === '/register' || req.nextUrl.pathname === '/login') {
